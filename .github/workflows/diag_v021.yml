@@ -1,1 +1,160 @@
+name: Mi Band 9 Pro V0.2.1 - UI Black Screen Diagnostic
 
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diag_v021.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore minimal watch project
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p src/pages/Index src/common
+          cat > package.json <<'END_PACKAGE'
+          {
+            "name": "mi9pro-diagnostic-v021",
+            "version": "0.2.1",
+            "private": true,
+            "scripts": {
+              "build": "aiot build"
+            },
+            "devDependencies": {
+              "aiot-toolkit": "2.0.5"
+            }
+          }
+          END_PACKAGE
+          cat > src/manifest.json <<'END_MANIFEST'
+          {
+            "package": "com.example.mi9prosensors.diag",
+            "name": "显示诊断",
+            "icon": "/common/icon.png",
+            "versionName": "0.2.1",
+            "versionCode": 21,
+            "minAPILevel": 1,
+            "deviceTypeList": [
+              "watch"
+            ],
+            "features": [],
+            "config": {
+              "logLevel": "log",
+              "designWidth": 336
+            },
+            "router": {
+              "entry": "Index",
+              "pages": {
+                "Index": {
+                  "component": "index",
+                  "path": "/"
+                }
+              }
+            },
+            "display": {
+              "backgroundColor": "#12243A"
+            }
+          }
+          END_MANIFEST
+          cat > src/app.ux <<'END_APP'
+          <script>
+          /**manifest**/
+          export default {}
+          </script>
+          END_APP
+          cat > src/pages/Index/index.ux <<'END_UI'
+          <template>
+            <div class="page">
+              <text class="title">界面已加载</text>
+              <text class="sub">V0.2.1 显示诊断</text>
+              <text class="sub">UI ONLY</text>
+              <text class="hint">无传感器 无蓝牙调用</text>
+            </div>
+          </template>
+          
+          <style>
+          .page {
+            width: 100%;
+            height: 100%;
+            background-color: #12243A;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          }
+          .title {
+            color: #FFFFFF;
+            font-size: 34px;
+            text-align: center;
+            margin-bottom: 16px;
+          }
+          .sub {
+            color: #00E5B7;
+            font-size: 22px;
+            text-align: center;
+            margin-bottom: 10px;
+          }
+          .hint {
+            color: #B7CEE0;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 12px;
+          }
+          </style>
+          
+          <script>
+          export default {}
+          </script>
+          END_UI
+          cat > /tmp/icon.b64 <<'END_ICON'
+          iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAACGElEQVR4nO3TIQEAIBDAwI9BI+rQ30AMxE6cn9msfS5Uze8A+MkApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUgzAGkGIM0ApBmANAOQZgDSDECaAUh73+HvLjbAZvUAAAAASUVORK5CYII=
+          END_ICON
+          base64 -d /tmp/icon.b64 > src/common/icon.png
+          python3 - <<'PYVALID'
+          import json,pathlib
+          m=json.loads(pathlib.Path('src/manifest.json').read_text())
+          assert m['router']['entry']=='Index'
+          assert pathlib.Path('src/pages/Index/index.ux').exists()
+          assert b'PNG' in pathlib.Path('src/common/icon.png').read_bytes()[:8]
+          print('Source and routing checks OK:',m['package'],m['versionName'])
+          PYVALID
+      - name: Install AIoT toolkit
+        run: npm install --no-audit --no-fund
+      - name: Build debug RPK
+        run: npm run build
+      - name: Verify RPK content
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -type f -name '*.rpk' -not -path './node_modules/*' -print
+          mkdir -p rpk-output
+          find . -type f -name '*.rpk' -not -path './node_modules/*' -exec cp '{}' rpk-output/ \;
+          python3 - <<'PYRPK'
+          import pathlib,json,zipfile
+          files=list(pathlib.Path('rpk-output').glob('*.rpk'))
+          assert len(files)>=1, 'No RPK created; inspect the Build debug RPK log'
+          for p in files:
+              with zipfile.ZipFile(p) as z:
+                  bad=z.testzip()
+                  assert bad is None, 'Corrupt RPK: '+str(bad)
+                  m=json.loads(z.read('manifest.json'))
+                  assert m['package']=='com.example.mi9prosensors.diag'
+                  assert m['versionName']=='0.2.1'
+                  assert m['router']['entry'] in m['router']['pages']
+                  print('Verified:',p.name,'files:',len(z.namelist()))
+          PYRPK
+      - name: Upload verified RPK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Band9Pro-Diagnostic-V021-RPK
+          path: rpk-output/*.rpk
+          if-no-files-found: error
