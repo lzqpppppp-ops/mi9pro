@@ -1,0 +1,96 @@
+name: Mi Band 9 Pro V0.2.1 - UI Black Screen Diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diag-v021.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore minimal watch project
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p src/pages/Index src/common
+          cat > package.json <<'END_PACKAGE'
+          {
+            "name": "mi9pro-diagnostic-v021",
+            "version": "0.2.1",
+            "private": true,
+            "scripts": {
+              "build": "aiot build"
+            },
+            "devDependencies": {
+              "aiot-toolkit": "2.0.5"
+            }
+          }
+          END_PACKAGE
+          cat > src/manifest.json <<'END_MANIFEST'
+          {
+            "package": "com.example.mi9prosensors.diag",
+            "name": "显示诊断",
+            "icon": "/common/icon.png",
+            "versionName": "0.2.1",
+            "versionCode": 21,
+            "minAPILevel": 1,
+            "deviceTypeList": [
+              "watch"
+            ],
+            "features": [],
+            "config": {
+              "logLevel": "log",
+              "designWidth": 336
+            },
+            "router": {
+              "entry": "Index",
+              "pages": {
+                "Index": {
+                  "component": "index",
+                  "path": "/"
+                }
+              }
+            },
+            "display": {
+              "backgroundColor": "#12243A"
+            }
+          }
+          END_MANIFEST
+          cat > src/app.ux <<'END_APP'
+          <script>
+          /**manifest**/
+          export default {}
+          </script>
+          END_APP
+          cat > src/pages/Index/index.ux <<'END_UI'
+          <template>
+            <div class="page">
+              <text class="title">界面已加载</text>
+              <text class="sub">V0.2.1 显示诊断</text>
+              <text class="sub">UI ONLY</text>
+              <text class="hint">无传感器 无蓝牙调用</text>
+            </div>
+          </template>
+          
+          <style>
+          .page {
+            width: 100%;
+            height: 100%;
+            background-color: #12243A;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          }
+          .title {
+            color: #FFFFFF;
+            font-size: 34px;
