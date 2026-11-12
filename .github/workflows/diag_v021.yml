@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p src/pages/Index src/common
+          mkdir -p src/Index src/common
           cat > package.json <<'END_PACKAGE'
           {
             "name": "mi9pro-diagnostic-v021",
@@ -72,7 +72,7 @@ jobs:
           export default {}
           </script>
           END_APP
-          cat > src/pages/Index/index.ux <<'END_UI'
+          cat > src/Index/index.ux <<'END_UI'
           <template>
             <div class="page">
               <text class="title">界面已加载</text>
@@ -123,7 +123,7 @@ jobs:
           import json,pathlib
           m=json.loads(pathlib.Path('src/manifest.json').read_text())
           assert m['router']['entry']=='Index'
-          assert pathlib.Path('src/pages/Index/index.ux').exists()
+          assert pathlib.Path('src/Index/index.ux').exists()
           assert b'PNG' in pathlib.Path('src/common/icon.png').read_bytes()[:8]
           print('Source and routing checks OK:',m['package'],m['versionName'])
           PYVALID
